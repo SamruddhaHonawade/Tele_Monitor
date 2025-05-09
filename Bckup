@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telegram Public Channel Monitor</title>
+    <style>
+        :root {
+            --primary-color: #0088cc;
+            --secondary-color: #f5f5f5;
+            --danger-color: #e53935;
+            --warning-color: #ffb300;
+            --success-color: #43a047;
+            --text-color: #333;
+            --light-text: #777;
+            --border-color: #ddd;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f9f9f9;
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 20px 0;
+            margin-bottom: 30px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        header h1 {
+            text-align: center;
+            font-size: 2.2rem;
+        }
+        
+        .dashboard {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 20px;
+        }
+        
+        .sidebar {
+            background-color: white;
+            border-radius: 5px;
+            padding: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            height: fit-content;
+        }
+        
+        .main-content {
+            background-color: white;
+            border-radius: 5px;
+            padding: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        
+        textarea.form-control {
+            min-height: 100px;
+            resize: vertical;
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        
+        .btn:hover {
+            background-color: #0077b3;
+        }
+        
+        .btn-block {
+            display: block;
+            width: 100%;
+        }
+        
+        .btn-danger {
+            background-color: var(--danger-color);
+        }
+        
+        .btn-danger:hover {
+            background-color: #c62828;
+        }
+        
+        .status-card {
+            background-color: var(--secondary-color);
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .status-card h3 {
+            margin-bottom: 10px;
+            color: var(--primary-color);
+        }
+        
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        
+        .status-item .label {
+            font-weight: 600;
+        }
+        
+        .status-item .value {
+            color: var(--primary-color);
+        }
+        
+        .log-container {
+            height: 400px;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 15px;
+            background-color: #f5f5f5;
+            font-family: monospace;
+            margin-bottom: 20px;
+        }
+        
+        .log-entry {
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .log-entry:last-child {
+            border-bottom: none;
+        }
+        
+        .log-timestamp {
+            color: var(--light-text);
+            font-size: 0.8rem;
+        }
+        
+        .log-message {
+            margin-top: 3px;
+        }
+        
+        .log-info {
+            color: var(--primary-color);
+        }
+        
+        .log-warning {
+            color: var(--warning-color);
+        }
+        
+        .log-error {
+            color: var(--danger-color);
+        }
+        
+        .log-success {
+            color: var(--success-color);
+        }
+        
+        .channel-list {
+            margin-top: 20px;
+        }
+        
+        .channel-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            margin-bottom: 10px;
+            background-color: var(--secondary-color);
+        }
+        
+        .channel-info {
+            flex: 1;
+        }
+        
+        .channel-name {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .channel-meta {
+            font-size: 0.9rem;
+            color: var(--light-text);
+        }
+        
+        .channel-actions {
+            margin-left: 10px;
+        }
+        
+        .alert-item {
+            padding: 15px;
+            border-left: 4px solid var(--danger-color);
+            background-color: #ffebee;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+        
+        .alert-title {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--danger-color);
+        }
+        
+        .alert-message {
+            margin-bottom: 10px;
+        }
+        
+        .alert-link {
+            display: inline-block;
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+        
+        .alert-link:hover {
+            text-decoration: underline;
+        }
+        
+        .tab-container {
+            margin-bottom: 20px;
+        }
+        
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+        }
+        
+        .tab.active {
+            border-bottom-color: var(--primary-color);
+            font-weight: 600;
+        }
+        
+        .tab-content {
+            display: none;
+            padding: 20px 0;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        @media (max-width: 768px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>Telegram Public Channel Monitor</h1>
+        </div>
+    </header>
+    
+    <div class="container">
+        <div class="dashboard">
+            <div class="sidebar">
+                <div class="status-card">
+                    <h3>Monitoring Status</h3>
+                    <div class="status-item">
+                        <span class="label">Status:</span>
+                        <span class="value" id="status-text">Not Running</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="label">Company:</span>
+                        <span class="value" id="company-name">Not Set</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="label">Channels Monitoring:</span>
+                        <span class="value" id="channels-count">0</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="label">Alerts Found:</span>
+                        <span class="value" id="alerts-count">0</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="label">Last Check:</span>
+                        <span class="value" id="last-check">Never</span>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="company-input">Company Name</label>
+                    <input type="text" id="company-input" class="form-control" placeholder="e.g. Flipkart">
+                </div>
+                
+                <div class="form-group">
+                    <label for="api-id">API ID</label>
+                    <input type="text" id="api-id" class="form-control" placeholder="Your Telegram API ID">
+                </div>
+                
+                <div class="form-group">
+                    <label for="api-hash">API Hash</label>
+                    <input type="text" id="api-hash" class="form-control" placeholder="Your Telegram API Hash">
+                </div>
+                
+                <div class="form-group">
+                    <label for="phone-number">Phone Number</label>
+                    <input type="text" id="phone-number" class="form-control" placeholder="+1234567890">
+                </div>
+                
+                <button id="start-btn" class="btn btn-block">Start Monitoring</button>
+                <button id="stop-btn" class="btn btn-block btn-danger" disabled>Stop Monitoring</button>
+                
+                <div class="form-group" style="margin-top: 20px;">
+                    <label for="custom-keywords">Custom Keywords (comma separated)</label>
+                    <textarea id="custom-keywords" class="form-control" placeholder="leak, breach, dump, credentials"></textarea>
+                </div>
+            </div>
+            
+            <div class="main-content">
+                <div class="tab-container">
+                    <div class="tabs">
+                        <div class="tab active" data-tab="logs">Logs</div>
+                        <div class="tab" data-tab="channels">Channels</div>
+                        <div class="tab" data-tab="alerts">Alerts</div>
+                    </div>
+                    
+                    <div class="tab-content active" id="logs-tab">
+                        <h2>Activity Log</h2>
+                        <div class="log-container" id="log-container">
+                            <div class="log-entry">
+                                <div class="log-timestamp">[System] Ready to start monitoring</div>
+                                <div class="log-message">Enter your company name and Telegram credentials to begin.</div>
+                            </div>
+                        </div>
+                        <button id="clear-logs-btn" class="btn">Clear Logs</button>
+                    </div>
+                    
+                    <div class="tab-content" id="channels-tab">
+                        <h2>Monitored Channels</h2>
+                        <div class="channel-list" id="channel-list">
+                            <p>No channels being monitored yet. Start the monitoring to discover relevant channels.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="tab-content" id="alerts-tab">
+                        <h2>Security Alerts</h2>
+                        <div id="alerts-container">
+                            <p>No alerts detected yet. Monitoring must be running to detect potential leaks.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Tab switching
+            const tabs = document.querySelectorAll('.tab');
+            const tabContents = document.querySelectorAll('.tab-content');
+            
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    // Remove active class from all tabs and contents
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tabContents.forEach(c => c.classList.remove('active'));
+                    
+                    // Add active class to clicked tab and corresponding content
+                    tab.classList.add('active');
+                    const tabId = tab.getAttribute('data-tab') + '-tab';
+                    document.getElementById(tabId).classList.add('active');
+                });
+            });
+            
+            // Form elements
+            const companyInput = document.getElementById('company-input');
+            const apiIdInput = document.getElementById('api-id');
+            const apiHashInput = document.getElementById('api-hash');
+            const phoneInput = document.getElementById('phone-number');
+            const customKeywordsInput = document.getElementById('custom-keywords');
+            const startBtn = document.getElementById('start-btn');
+            const stopBtn = document.getElementById('stop-btn');
+            const clearLogsBtn = document.getElementById('clear-logs-btn');
+            const logContainer = document.getElementById('log-container');
+            const channelList = document.getElementById('channel-list');
+            const alertsContainer = document.getElementById('alerts-container');
+            
+            // Status elements
+            const statusText = document.getElementById('status-text');
+            const companyName = document.getElementById('company-name');
+            const channelsCount = document.getElementById('channels-count');
+            const alertsCount = document.getElementById('alerts-count');
+            const lastCheck = document.getElementById('last-check');
+            
+            // Sample data for demo (replace with real data in production)
+            let monitoringActive = false;
+            let alertCounter = 0;
+            let channelCounter = 0;
+            
+            // Add log entry
+            function addLog(message, type = 'info') {
+                const now = new Date();
+                const timestamp = now.toLocaleTimeString();
+                
+                const logEntry = document.createElement('div');
+                logEntry.className = 'log-entry';
+                
+                const timestampElem = document.createElement('div');
+                timestampElem.className = 'log-timestamp';
+                timestampElem.textContent = `[${timestamp}]`;
+                
+                const messageElem = document.createElement('div');
+                messageElem.className = `log-message log-${type}`;
+                messageElem.textContent = message;
+                
+                logEntry.appendChild(timestampElem);
+                logEntry.appendChild(messageElem);
+                logContainer.appendChild(logEntry);
+                
+                // Scroll to bottom
+                logContainer.scrollTop = logContainer.scrollHeight;
+            }
+            
+            // Add channel to list
+            function addChannel(name, username, members, lastActive) {
+                channelCounter++;
+                channelsCount.textContent = channelCounter;
+                
+                const channelItem = document.createElement('div');
+                channelItem.className = 'channel-item';
+                
+                const channelInfo = document.createElement('div');
+                channelInfo.className = 'channel-info';
+                
+                const nameElem = document.createElement('div');
+                nameElem.className = 'channel-name';
+                nameElem.textContent = name;
+                
+                const metaElem = document.createElement('div');
+                metaElem.className = 'channel-meta';
+                metaElem.textContent = `@${username} • ${members} members • Last active: ${lastActive}`;
+                
+                channelInfo.appendChild(nameElem);
+                channelInfo.appendChild(metaElem);
+                
+                const actions = document.createElement('div');
+                actions.className = 'channel-actions';
+                
+                const viewBtn = document.createElement('a');
+                viewBtn.href = `https://t.me/${username}`;
+                viewBtn.target = '_blank';
+                viewBtn.className = 'btn';
+                viewBtn.textContent = 'View';
+                
+                actions.appendChild(viewBtn);
+                
+                channelItem.appendChild(channelInfo);
+                channelItem.appendChild(actions);
+                
+                channelList.appendChild(channelItem);
+            }
+            
+            // Add alert
+            function addAlert(channel, message, url) {
+                alertCounter++;
+                alertsCount.textContent = alertCounter;
+                
+                const alertItem = document.createElement('div');
+                alertItem.className = 'alert-item';
+                
+                const titleElem = document.createElement('div');
+                titleElem.className = 'alert-title';
+                titleElem.textContent = `Potential data leak in ${channel}`;
+                
+                const messageElem = document.createElement('div');
+                messageElem.className = 'alert-message';
+                messageElem.textContent = message.length > 200 ? message.substring(0, 200) + '...' : message;
+                
+                const linkElem = document.createElement('a');
+                linkElem.href = url;
+                linkElem.target = '_blank';
+                linkElem.className = 'alert-link';
+                linkElem.textContent = 'View message on Telegram';
+                
+                alertItem.appendChild(titleElem);
+                alertItem.appendChild(messageElem);
+                alertItem.appendChild(linkElem);
+                
+                alertsContainer.appendChild(alertItem);
+            }
+            
+            // Clear logs
+            clearLogsBtn.addEventListener('click', () => {
+                logContainer.innerHTML = '';
+                addLog('Logs cleared', 'info');
+            });
+            
+            // Start monitoring
+            startBtn.addEventListener('click', () => {
+                const company = companyInput.value.trim();
+                const apiId = apiIdInput.value.trim();
+                const apiHash = apiHashInput.value.trim();
+                const phone = phoneInput.value.trim();
+                
+                if (!company || !apiId || !apiHash || !phone) {
+                    addLog('Please fill in all required fields', 'error');
+                    return;
+                }
+                
+                // Update status
+                monitoringActive = true;
+                statusText.textContent = 'Running';
+                companyName.textContent = company;
+                startBtn.disabled = true;
+                stopBtn.disabled = false;
+                
+                addLog(`Starting monitoring for company: ${company}`, 'success');
+                addLog('Searching for relevant public channels...', 'info');
+                
+                // Simulate finding channels (replace with actual API calls)
+                setTimeout(() => {
+                    addChannel('Tech Leaks & News', 'techleaks', '15,342', '2 hours ago');
+                    addLog('Found channel: @techleaks with 15,342 members', 'info');
+                    
+                    addChannel('Cybersecurity Discussions', 'cybersecgroup', '8,765', '1 day ago');
+                    addLog('Found channel: @cybersecgroup with 8,765 members', 'info');
+                    
+                    addChannel(`${company} News`, `${company.toLowerCase()}news`, '12,456', '5 hours ago');
+                    addLog(`Found channel: @${company.toLowerCase()}news with 12,456 members`, 'info');
+                    
+                    addLog('Monitoring active. Watching for potential leaks...', 'success');
+                    
+                    // Simulate finding alerts
+                    setTimeout(() => {
+                        addAlert('Tech Leaks & News', 
+                            `Possible ${company} data leak detected. User posted what appears to be internal credentials. Message: "Check out these ${company} admin credentials I found..."`, 
+                            'https://t.me/techleaks/12345');
+                        
+                        addLog(`POTENTIAL LEAK DETECTED in @techleaks!`, 'warning');
+                    }, 5000);
+                }, 2000);
+            });
+            
+            // Stop monitoring
+            stopBtn.addEventListener('click', () => {
+                monitoringActive = false;
+                statusText.textContent = 'Stopped';
+                startBtn.disabled = false;
+                stopBtn.disabled = true;
+                
+                addLog('Monitoring stopped', 'info');
+            });
+            
+            // Demo initialization
+            companyInput.value = 'Flipkart';
+            apiIdInput.value = '21799719';
+            apiHashInput.value = 'ed73761213ce5180bc7249e4a764c746';
+            phoneInput.value = '+917353641438';
+            customKeywordsInput.value = 'leak, breach, dump, credentials, database, hack, password, exposed';
+        });
+    </script>
+</body>
+</html>
